@@ -19,8 +19,8 @@ app.get('/', function(req, res, next){
 				items.push({
 					title:$title.attr('title'),
 					author:$user.attr('title'),
-					href:$title.attr('href'),
-					
+					href:$title.attr('href')
+
 				});
 			})
 
