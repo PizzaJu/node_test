@@ -54,17 +54,7 @@ superagent.get(cnodeUrl)
 				return false;
 		});
 
-		ep.after('user_html',userUrls.length, function(users){
-			userInfo = users.map(function(userPair){
-				var userHtml = userPair[1];
-				var $ = cheerio.load(userHtml);
-				return({
-					author: $('.dark').eq(0).text().trim(),
-					integral: $('.big').eq(0).text().trim()
-				})
-			})
-			// console.log(userInfo);
-		})
+		
 
 		ep.after('topic_html', topicUrls.length, function(topics){      //监听topic_html事件
 			topicInfo = topics.map(function(topicPair){
@@ -75,34 +65,59 @@ superagent.get(cnodeUrl)
 					title: $('.topic_full_title').text().trim(),       //text文本内容  trim去掉两段空白
 					href: topicUrl,
 					comment1: $('.reply_content').eq(0).text().trim(),  //eq(0)选择第一个元素
-					userUrl: url.resolve(cnodeUrl,$('.user_avatar').eq(0).attr('href'))
+					userUrl: url.resolve(cnodeUrl,$('.user_avatar').eq(1).attr('href'))
 				});
+				
 			});
-			
+			console.log('final:');
+			console.log(topicInfo);
 			topicInfo.forEach(function(topicInfoEvery){
-				userUrls.push(topicInfoEvery.userUrl);               //得到第一个评论的用户的url数组
+				userUrls.push(topicInfoEvery.userUrl);               //第一个评论的用户的url数组
 			});
 			// console.log(userUrls);
+
+			ep.after('user_html', userUrls.length, function(users){
+				userInfo = users.map(function(userPair){
+					// var userUrl = userPair[0];
+					var userHtml = userPair[1];
+					// console.log(userHtml);
+					var $ = cheerio.load(userHtml);
+					// console.log($);
+					return({
+
+						author: $('img.user_avatar').eq(0).attr('title'),
+						integral: $('.big').eq(1).text().trim()
+					})
+				});
+				console.log(userInfo);	
+				// console.log(user[0]);
+			})
+
 			userUrls.forEach(function(userUrl){
 				superagent.get(userUrl)
 					.end(function(err, res){
-						ep.emit('user_html',[userUrl, res.text])
-					})
-			})
+						ep.emit('user_html',[userUrl, res.text]);
+						// console.log(userUrl);
+					});
+			});
+			
+		});
+
+		
 
 			// console.log(userUrls);
 			/*userUrls = topicInfo.userUrl;
 			console.log(userUrls);*/
 			
-			/*console.log('final:');
-			console.log(topicInfo);*/
-		});
-
+			
 		topicUrls.forEach(function (topicUrl){
 			superagent.get(topicUrl)        //继续抓取每一条topicUrl 首页上的话题href
 				.end(function(err,res){
 					// console.log('fetch ' + topicUrl +' successful')   //打印href
 					ep.emit('topic_html',[topicUrl, res.text])     //发射topic_html事件并传入参数
+					// console.log(res.text);
+					// console.log(topicUrl)
 				})
-			})
+		})	
+
 	})
